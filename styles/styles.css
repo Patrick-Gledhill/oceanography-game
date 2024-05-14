@@ -1,0 +1,38 @@
+*,
+*:before,
+*:after {
+	font-family: roboto, Arial, Helvetica, sans-serif, system-ui;
+	padding: 0px;
+	margin: 0px;
+	box-sizing: border-box;
+	/* user-select: none; */
+}
+
+body {
+	background: #ffffff;
+}
+
+p,
+label,
+input,
+pre,
+div {
+	color: #ffffff;
+	font-size: 16px;
+}
+
+#scene {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+#zone-desc {
+	z-index: 999;
+	max-width: 256px;
+	max-height: 160px;
+	position: absolute;
+	bottom: 8px;
+	left: 8px;
+	overflow-y: scroll;
+}
