@@ -564,40 +564,31 @@ class Player {
 
     update(staticObjects) {
         if (this.center.y >= 0) {
-            var dx = 0;
-            var dy = 0;
-
-            var mult = 1;
+            var mult = 0;
 
             if (keysDown["w"]) {
-                dy -= 1;
+                mult += 1;
             }
 
             if (keysDown["s"]) {
-                dy += 1;
+                mult -= 1;
             }
 
             if (keysDown["a"]) {
-                dx -= 1;
+                this.tMoveDirection -= 2 * degToRad;
             }
 
             if (keysDown["d"]) {
-                dx += 1;
+                this.tMoveDirection += 2 * degToRad;
             }
 
             if (keysDown["c"]) {
-                mult = 2;
+                mult *= 3;
             }
 
-            if (dx !== 0 || dy !== 0) {
-                var dir = Math.atan2(dy, dx);
+            this.moveDirection = lerpAngle(this.moveDirection, this.tMoveDirection, 0.2);
 
-                this.tMoveDirection = dir;
-                this.moveDirection = lerpAngle(this.moveDirection, this.tMoveDirection, 0.1);
-
-
-                this.velocity.plusEquals(new Vec2(Math.cos(this.moveDirection) * this.acceleration * mult, Math.sin(this.moveDirection) * this.acceleration * 1.25 * mult));
-            }
+            this.velocity.plusEquals(new Vec2(Math.cos(this.moveDirection) * this.acceleration * mult, Math.sin(this.moveDirection) * this.acceleration * 1.25 * mult));
         }
 
         if (this.center.y >= 0) {
@@ -640,14 +631,43 @@ class Player {
         context.fillStyle = "#ffff00";
         context.translate(this.center.x, this.center.y);
         context.rotate(this.moveDirection);
-        context.beginPath();
-        context.ellipse(0, 0, this.width / 2, (this.height / 2) * 0.9, 0, 0, 2 * Math.PI, false);
-        context.fill();
-        context.closePath();
+
+        var dir = Math.sign(Math.cos(this.moveDirection));
+        if (dir === -1) {
+            context.rotate(Math.PI);
+        }
+        context.scale(dir, 1);
+
+        context.save();
+
+        context.fillStyle = "#d0d000";
         context.beginPath();
         context.rect(-this.width * 0.8, -this.height * 0.2, this.width * 0.5, this.height * 0.4);
         context.fill();
         context.closePath();
+
+        context.fillStyle = "#ffff00";
+        context.beginPath();
+        context.ellipse(0, 0, this.width / 2, (this.height / 2) * 0.9, 0, -105 * degToRad, 0, true);
+        context.lineTo((this.width / 2) * 0.25, -(this.height / 2) * 0.2);
+        context.fill();
+        context.closePath();
+
+        context.globalCompositeOperation = "multiply";
+        context.fillStyle = "#4080ff80";
+        context.beginPath();
+        context.ellipse(0, 0, this.width / 2, (this.height / 2) * 0.9, 0, -105 * degToRad, 0, false);
+        context.lineTo((this.width / 2) * 0.25, -(this.height / 2) * 0.2);
+        context.fill();
+        context.closePath();
+
+        // context.beginPath();
+        // context.ellipse(0, 0, this.width / 2, (this.height / 2) * 0.9, 0, 0, 2 * Math.PI, false);
+        // context.fill();
+        // context.closePath();
+
+        context.restore();
+
         context.fillStyle = "#808080";
         context.beginPath();
         context.rect(-this.width * 0.8, -this.height * 0.35, this.width * 0.2, this.height * 0.7);
@@ -699,9 +719,9 @@ class Fish {
 
         if (this.center.y >= 0) {
             if (this.type === "Atlantic Bluefin Tuna" || this.type === "Great White Shark") {
-                if ((this.center.x / 5) > 150) {
+                if ((this.center.x / 5) > 100) {
                     this.tMoveDirection = -Math.PI;
-                } else if ((this.center.x / 5) < -150) {
+                } else if ((this.center.x / 5) < -100) {
                     this.tMoveDirection = 0;
                 } else if ((this.center.y / 5) < 10) {
                     this.tMoveDirection = new Vec2(this.center.x + this.velocity.x * 10, this.center.y + random(1, 5)).subtract(this.center).direction();
@@ -709,9 +729,9 @@ class Fish {
                     this.tMoveDirection = -Math.PI / 2;
                 }
             } else if (this.type === "Blue Lanternfish") {
-                if ((this.center.x / 5) > 150) {
+                if ((this.center.x / 5) > 100) {
                     this.tMoveDirection = -Math.PI;
-                } else if ((this.center.x / 5) < -150) {
+                } else if ((this.center.x / 5) < -100) {
                     this.tMoveDirection = 0;
                 } else if ((this.center.y / 5) < 300) {
                     this.tMoveDirection = new Vec2(this.center.x + (this.velocity.x * 10), this.center.y + random(5, 10)).subtract(this.center).direction();
@@ -1030,7 +1050,7 @@ class Fish {
     }
 }
 
-var player = new Player(-17.5, 0 * 5, 35, 35);
+var player = new Player(-17.5, 50 * 5, 35, 35);
 
 var blueFinTuna = [];
 var greatWhiteSharks = [];
@@ -1044,7 +1064,7 @@ for (var i = 0; i < 50; i++) {
 
 for (var i = 0; i < 3; i++) {
     var randAngle = random(-180, 180) * degToRad;
-    var scale = random(0.9, 1.1);
+    var scale = random(0.9, 1.3);
     greatWhiteSharks.push(new Fish(Math.cos(randAngle) * random(0, 50), 500 + Math.sin(randAngle) * random(0, 50), 9.9 * scale, 3 * scale, ((15.6 * 5) / 60) / 60, "Great White Shark"));
 }
 
@@ -1139,15 +1159,43 @@ function main() {
 
     player.draw(ctx);
 
-    ctx.fillStyle = "#ffbf80";
-    ctx.fillRect(camera.x - (vWidth / 2) / camera.viewScale, 54500, vWidth / camera.viewScale, 500);
-
     // ctx.lineWidth = 1 / camera.viewScale;
     // ctx.strokeStyle = "#ff0000";
     // ctx.beginPath();
     // ctx.arc(0, 0, boidsRadius, 0, 2 * Math.PI, false);
     // ctx.stroke();
     // ctx.closePath();
+
+    ctx.fillStyle = "#ffbf80";
+    ctx.beginPath();
+    ctx.moveTo(-175 * 5, 6 * 5);
+    ctx.quadraticCurveTo(-125 * 5, 6 * 5, -125 * 5, 200 * 5);
+    ctx.lineTo(-100 * 5, 1000 * 5);
+    ctx.lineTo(-80 * 5, 4000 * 5);
+    ctx.lineTo(-75 * 5, 6000 * 5);
+    ctx.lineTo(2 * 5, 11000 * 5);
+    ctx.lineTo(-1000 * 5, 11000 * 5);
+    ctx.lineTo(-1000 * 5, 0);
+    ctx.lineTo(-225 * 5, 0);
+    ctx.fill();
+    // ctx.stroke();
+    ctx.closePath();
+
+    // ctx.beginPath();
+    // ctx.moveTo(175 * 5, 6 * 5);
+    // ctx.quadraticCurveTo(125 * 5, 6 * 5, 125 * 5, 200 * 5);
+    // ctx.lineTo(100 * 5, 1000 * 5);
+    // ctx.lineTo(80 * 5, 4000 * 5);
+    // ctx.lineTo(75 * 5, 6000 * 5);
+    // ctx.lineTo(-2 * 5, 11000 * 5);
+    // ctx.lineTo(1000 * 5, 11000 * 5);
+    // ctx.lineTo(1000 * 5, 0);
+    // ctx.lineTo(225 * 5, 0);
+    // ctx.fill();
+    // // ctx.stroke();
+    // ctx.closePath();
+
+    ctx.fillRect(camera.x - (vWidth / 2) / camera.viewScale, 54500, vWidth / camera.viewScale, 500);
 
     ctx.save();
     ctx.globalCompositeOperation = "multiply";
@@ -1207,7 +1255,7 @@ function main() {
             var lFish = lanternFish[i];
 
             if (pointToRectangleCollisionDetection(lFish.center, { position: { x: camera.x - (vWidth / 2) / camera.viewScale, y: camera.y - (vHeight / 2) / camera.viewScale }, width: vWidth / camera.viewScale, height: vHeight / camera.viewScale })) {
-                var lightGradF = oCtx.createRadialGradient(lFish.center.x, lFish.center.y, 0 * 5, lFish.center.x, lFish.center.y, 1 * 5);
+                var lightGradF = oCtx.createRadialGradient(lFish.center.x, lFish.center.y, 0 * 5, lFish.center.x, lFish.center.y, 2 * 5);
                 lightGradF.addColorStop(0.1, "#ffffff");
                 // lightGrad.addColorStop(0.25, "#80bfff40");
                 // lightGrad.addColorStop(0.5, "#80bfff10");
